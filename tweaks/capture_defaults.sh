@@ -9,7 +9,6 @@ TMP_OUTPUT_FILE="$OUTPUT_FILE.tmp.$$"
 DEFAULT_OVERRIDES_FILE="$MODDIR/tweaks/default_overrides.sh"
 
 # Detect kernel family (best-effort, aligned with WebUI logic)
-KERN_VER=$(uname -r 2>/dev/null || echo "")
 IS_1280=0
 IS_2100=0
 IS_TRINKET=0
@@ -21,7 +20,7 @@ elif [ -f /sys/mi_detect/device_name ]; then
   DEVICE_NAME=$(cat /sys/mi_detect/device_name 2>/dev/null)
 fi
 
-DEVICE_CODE=$(echo "$DEVICE_NAME" | tr 'A-Z' 'a-z')
+DEVICE_CODE=$(echo "$DEVICE_NAME" | tr '[:upper:]' '[:lower:]')
 TRINKET_DEVICES="ginkgo willow sm6125 trinket laurel_sprout"
 FLOPPY1280_DEVICES="a25x a33x a53x m33x m34x gta4xls a26xs"
 FLOPPY2100_DEVICES="r9s o1s p3s t2s"
@@ -33,7 +32,7 @@ for d in $TRINKET_DEVICES; do
   fi
 done
 
-if [ "$IS_TRINKET" != "1" ]; then
+if ! $IS_TRINKET; then
   for d in $FLOPPY1280_DEVICES; do
     if echo "$DEVICE_CODE" | grep -q "$d"; then
       IS_1280=1
@@ -42,7 +41,7 @@ if [ "$IS_TRINKET" != "1" ]; then
   done
 fi
 
-if [ "$IS_TRINKET" != "1" ] && [ "$IS_1280" != "1" ]; then
+if ! $IS_TRINKET && ! $IS_1280; then
   for d in $FLOPPY2100_DEVICES; do
     if echo "$DEVICE_CODE" | grep -q "$d"; then
       IS_2100=1
@@ -59,6 +58,7 @@ apply_predefined_tweak_defaults() {
     return 1
 }
 
+# shellcheck disable=SC1090
 [ -f "$DEFAULT_OVERRIDES_FILE" ] && . "$DEFAULT_OVERRIDES_FILE"
 
 # --- ZRAM Defaults ---
@@ -70,7 +70,7 @@ elif [ -e /dev/zram0 ]; then
 fi
 
 if [ -n "$ZRAM_DEV" ]; then
-    ZRAM_DISKSIZE=$(cat /sys/block/zram0/disksize 2>/dev/null || echo "0")
+    ZRAM_DISKSIZE=$(cat /sys/block/zram0/disksize 2>/dev/null || echo 0)
     ZRAM_ALGO_FULL=$(cat /sys/block/zram0/comp_algorithm 2>/dev/null || echo "lz4")
     ZRAM_ALGO=$(echo "$ZRAM_ALGO_FULL" | grep -o '\[.*\]' | tr -d '[]')
     [ -z "$ZRAM_ALGO" ] && ZRAM_ALGO=$(echo "$ZRAM_ALGO_FULL" | awk '{print $1}')
@@ -84,15 +84,18 @@ if [ -n "$ZRAM_DEV" ]; then
         ZRAM_ENABLED=1
     fi
 else
-    ZRAM_DISKSIZE="0"
+    ZRAM_DISKSIZE=0
     ZRAM_ALGO="lz4"
-    ZRAM_ENABLED="0"
+    ZRAM_ENABLED=0
 fi
 
 # --- Sound Control Defaults (FloppyTrinketMi only) ---
-SOUND_HP_L="0"
-SOUND_HP_R="0"
-SOUND_MIC="0"
+# shellcheck disable=SC2034
+SOUND_HP_L=0
+# shellcheck disable=SC2034
+SOUND_HP_R=0
+# shellcheck disable=SC2034
+SOUND_MIC=0
 
 # --- Output JSON ---
 cat > "$TMP_OUTPUT_FILE" << EOF
@@ -157,10 +160,10 @@ if [ -f "$MODDIR/tweaks/iosched.sh" ]; then
 fi
 )
     }$(
-    if [ "$IS_1280" = "1" ] || [ "$IS_2100" = "1" ]; then
+    if $IS_1280 || $IS_2100; then
       cat << EOF_EXYNOS_UV
 ,
-$(if [ "$IS_1280" = "1" ]; then cat << EOF_1280_THERMAL
+$(if [ "$IS_1280" = 1 ]; then cat << EOF_1280_THERMAL
     "thermal": {
       "mode": "$(cat /sys/devices/platform/10080000.BIG/thermal_mode 2>/dev/null || echo 1)",
       "custom_freq": "$(cat /sys/devices/platform/10080000.BIG/emergency_frequency 2>/dev/null || echo 2288000)"
@@ -218,7 +221,7 @@ EOF_EXYNOS_FC_DEFAULTS
 EOF_EXYNOS_UV
     fi
 )$(
-    if [ "$IS_1280" = "1" ] || [ "$IS_2100" = "1" ]; then
+    if $IS_1280 || $IS_2100; then
       cat << EOF_EXYNOS
 ,
     "misc": {
@@ -246,13 +249,13 @@ $(      first=1
       append_exynos_entry "esg_short_burst" "/sys/kernel/ems/energy_step/short_burst"
 )
     }
-$(      if [ "$IS_2100" = "1" ] && [ -f "$MODDIR/tweaks/thermal_control.sh" ] && [ "$(sh "$MODDIR/tweaks/thermal_control.sh" is_available 2>/dev/null)" = "available=1" ]; then
+$(      if $IS_2100 && [ -f "$MODDIR/tweaks/thermal_control.sh" ] && [ "$(sh "$MODDIR/tweaks/thermal_control.sh" is_available 2>/dev/null)" = "available=1" ]; then
         printf ',\n'
         sh "$MODDIR/tweaks/thermal_control.sh" emit_defaults_fragment
       fi
 )
 EOF_EXYNOS
-    elif [ "$IS_TRINKET" = "1" ]; then
+    elif $IS_TRINKET; then
     cat << EOF_TRINKET
 ,
     "soundcontrol": {

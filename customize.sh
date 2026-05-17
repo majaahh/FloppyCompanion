@@ -37,7 +37,7 @@ resolve_kernel_name() {
             echo "FloppyTrinketMi"
             ;;
         *)
-            echo "$(echo "$1" | grep -o 'Floppy[A-Za-z0-9]*' | head -n 1)"
+            echo "$1" | grep -o 'Floppy[A-Za-z0-9]*' | head -n 1
             ;;
     esac
 }
@@ -122,7 +122,7 @@ if echo "$KERN_VER" | grep -q "Floppy"; then
         fi
     fi
     
-    if [ "$UNSUPPORTED" = "1" ]; then
+    if [ "$UNSUPPORTED" = 1 ]; then
         ui_print "  ----------------------------------------"
         ui_print "  ⚠️  UNSUPPORTED VERSION"
         ui_print "  ----------------------------------------"

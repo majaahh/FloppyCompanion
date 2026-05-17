@@ -1,17 +1,15 @@
 #!/system/bin/sh
 # Memory Tweaks Backend
 
-MODDIR=${0%/*}
 DATA_DIR="/data/adb/floppy_companion"
 CONF_FILE="$DATA_DIR/config/memory.conf"
-DEFAULTS_FILE="$DATA_DIR/presets/.defaults.json"
 
 # Helper to read a value
 read_val() {
     if [ -f "/proc/sys/vm/$1" ]; then
         cat "/proc/sys/vm/$1"
     else
-        echo "0"
+        echo 0
     fi
 }
 
@@ -60,16 +58,16 @@ case "$1" in
             val=$(echo "$arg" | cut -d= -f2)
 
             # Handle mutually exclusive logic
-            if [ "$key" = "dirty_bytes" ] && [ "$val" != "0" ]; then
+            if [ "$key" = "dirty_bytes" ] && [ "$val" != 0 ]; then
                 write_val dirty_ratio 0
                 write_val dirty_bytes "$val"
-            elif [ "$key" = "dirty_ratio" ] && [ "$val" != "0" ]; then
+            elif [ "$key" = "dirty_ratio" ] && [ "$val" != 0 ]; then
                 write_val dirty_bytes 0
                 write_val dirty_ratio "$val"
-            elif [ "$key" = "dirty_background_bytes" ] && [ "$val" != "0" ]; then
+            elif [ "$key" = "dirty_background_bytes" ] && [ "$val" != 0 ]; then
                 write_val dirty_background_ratio 0
                 write_val dirty_background_bytes "$val"
-            elif [ "$key" = "dirty_background_ratio" ] && [ "$val" != "0" ]; then
+            elif [ "$key" = "dirty_background_ratio" ] && [ "$val" != 0 ]; then
                 write_val dirty_background_bytes 0
                 write_val dirty_background_ratio "$val"
             else
@@ -91,16 +89,16 @@ case "$1" in
                 
                 # reusing logic via self-call or duplicate? 
                 # duplicate for simplicity inside loop
-                 if [ "$key" = "dirty_bytes" ] && [ "$val" != "0" ]; then
+                 if [ "$key" = "dirty_bytes" ] && [ "$val" != 0 ]; then
                     write_val dirty_ratio 0
                     write_val dirty_bytes "$val"
-                elif [ "$key" = "dirty_ratio" ] && [ "$val" != "0" ]; then
+                elif [ "$key" = "dirty_ratio" ] && [ "$val" != 0 ]; then
                     write_val dirty_bytes 0
                     write_val dirty_ratio "$val"
-                elif [ "$key" = "dirty_background_bytes" ] && [ "$val" != "0" ]; then
+                elif [ "$key" = "dirty_background_bytes" ] && [ "$val" != 0 ]; then
                     write_val dirty_background_ratio 0
                     write_val dirty_background_bytes "$val"
-                elif [ "$key" = "dirty_background_ratio" ] && [ "$val" != "0" ]; then
+                elif [ "$key" = "dirty_background_ratio" ] && [ "$val" != 0 ]; then
                     write_val dirty_background_bytes 0
                     write_val dirty_background_ratio "$val"
                 else

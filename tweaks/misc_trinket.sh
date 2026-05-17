@@ -19,13 +19,15 @@ is_available() {
 
 # Get current state from kernel
 get_current() {
-    local touchboost=""
+    touchboost=""
     
     if [ -f "$TOUCHBOOST_NODE" ]; then
         touchboost=$(cat "$TOUCHBOOST_NODE" 2>/dev/null | tr -d '\n\r' || echo "")
     fi
     
     echo "touchboost=$touchboost"
+
+    unset touchboost
 }
 
 # Get saved config
@@ -39,8 +41,8 @@ get_saved() {
 
 # Save config (does not apply)
 save() {
-    local key="$1"
-    local value="$2"
+    key="$1"
+    value="$2"
     
     mkdir -p "$(dirname "$CONFIG_FILE")"
     
@@ -48,19 +50,21 @@ save() {
         touch "$CONFIG_FILE"
     fi
     
-    if grep -q "^${key}=" "$CONFIG_FILE" 2>/dev/null; then
-        sed -i "s/^${key}=.*/${key}=${value}/" "$CONFIG_FILE"
+    if grep -q "^$key=" "$CONFIG_FILE" 2>/dev/null; then
+        sed -i "s/^$key=.*/$key=$value/" "$CONFIG_FILE"
     else
-        echo "${key}=${value}" >> "$CONFIG_FILE"
+        echo "$key=$value" >> "$CONFIG_FILE"
     fi
     
     echo "saved"
+
+    unset key value
 }
 
 # Apply a single setting immediately
 apply() {
-    local key="$1"
-    local value="$2"
+    key="$1"
+    value="$2"
     
     case "$key" in
         touchboost)
@@ -75,6 +79,8 @@ apply() {
             echo "error: Unknown key $key"
             ;;
     esac
+
+    unset key value
 }
 
 # Apply saved config (called at boot)
@@ -83,13 +89,15 @@ apply_saved() {
         return 0
     fi
     
-    local touchboost=$(grep '^touchboost=' "$CONFIG_FILE" | cut -d= -f2)
+    touchboost=$(grep '^touchboost=' "$CONFIG_FILE" | cut -d= -f2)
     
     if [ -n "$touchboost" ] && [ -f "$TOUCHBOOST_NODE" ]; then
         echo "$touchboost" > "$TOUCHBOOST_NODE" 2>/dev/null
     fi
     
     echo "applied_saved"
+
+    unset touchboost
 }
 
 # Main action handler
